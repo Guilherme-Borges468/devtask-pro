@@ -1,47 +1,15 @@
 import streamlit as st
 import pandas as pd
 
-st.set_page_config(page_title="DevBoard AI", page_icon="🚀", layout="wide")
+st.set_page_config(
+    page_title="DevBoard AI",
+    page_icon="🚀",
+    layout="wide"
+)
 
-# -------------------------
-# CSS GLOBAL
-# -------------------------
-
-st.markdown("""
-<style>
-
-[data-testid="stSidebar"] {
-    background-color: #111;
-}
-
-.login-wrap{
-    display:flex;
-    justify-content:center;
-    align-items:center;
-    height:85vh;
-}
-
-.login-box{
-    width:380px;
-    padding:40px;
-    border-radius:12px;
-    background:#1e1e1e;
-    box-shadow:0px 0px 30px rgba(0,0,0,0.4);
-}
-
-.task-card{
-    padding:15px;
-    border-radius:10px;
-    background:#1e1e1e;
-    margin-bottom:10px;
-}
-
-</style>
-""", unsafe_allow_html=True)
-
-# -------------------------
+# -----------------------
 # LOGIN
-# -------------------------
+# -----------------------
 
 def login():
 
@@ -49,7 +17,7 @@ def login():
 
     with col2:
 
-        st.markdown("## 🚀 DevBoard AI")
+        st.title("🚀 DevBoard AI")
         st.write("Kanban para equipes de desenvolvimento")
 
         user = st.text_input("Usuário")
@@ -59,54 +27,60 @@ def login():
 
             if user == "admin" and password == "123":
 
-                st.session_state.logado = True
+                st.session_state["logado"] = True
                 st.rerun()
 
             else:
 
-                st.error("Credenciais inválidas")
+                st.error("Usuário ou senha inválidos")
 
-# -------------------------
+
+if "logado" not in st.session_state:
+    st.session_state["logado"] = False
+
+
+if not st.session_state["logado"]:
+    login()
+    st.stop()
+
+
+# -----------------------
 # BANCO DE TAREFAS
-# -------------------------
+# -----------------------
 
 if "tasks" not in st.session_state:
 
     st.session_state.tasks = [
 
         {"titulo":"Criar sistema de login","descricao":"Implementar autenticação","status":"todo"},
-
         {"titulo":"Criar dashboard","descricao":"Adicionar métricas","status":"progress"},
-
         {"titulo":"Criar API REST","descricao":"Integração backend","status":"todo"},
-
         {"titulo":"Deploy cloud","descricao":"Publicar aplicação","status":"done"},
-
         {"titulo":"Melhorar UI","descricao":"Aplicar design moderno","status":"progress"}
 
     ]
 
-# -------------------------
+
+# -----------------------
 # SIDEBAR
-# -------------------------
+# -----------------------
 
 st.sidebar.title("🚀 DevBoard AI")
 
 menu = st.sidebar.radio(
-
     "Menu",
     ["Dashboard","Kanban","Nova tarefa"]
-
 )
 
 if st.sidebar.button("Sair"):
 
-    st.session_state.logado = False
+    st.session_state["logado"] = False
     st.rerun()
 
-# -------------------------
+
+# -----------------------
 # DASHBOARD
-# -------------------------
+# -----------------------
 
 if menu == "Dashboard":
 
@@ -115,7 +89,6 @@ if menu == "Dashboard":
     df = pd.DataFrame(st.session_state.tasks)
 
     total = len(df)
-
     todo = len(df[df["status"]=="todo"])
     progress = len(df[df["status"]=="progress"])
     done = len(df[df["status"]=="done"])
@@ -123,9 +96,9 @@ if menu == "Dashboard":
     col1,col2,col3,col4 = st.columns(4)
 
     col1.metric("Total", total)
-    col2.metric("A fazer", todo)
-    col3.metric("Em progresso", progress)
-    col4.metric("Concluídas", done)
+    col2.metric("A Fazer", todo)
+    col3.metric("Em Progresso", progress)
+    col4.metric("Concluído", done)
 
     graf = pd.DataFrame({
 
@@ -136,42 +109,47 @@ if menu == "Dashboard":
 
     st.bar_chart(graf.set_index("Status"))
 
-# -------------------------
+
+# -----------------------
 # NOVA TAREFA
-# -------------------------
+# -----------------------
 
 if menu == "Nova tarefa":
 
     st.title("➕ Criar tarefa")
 
     titulo = st.text_input("Título")
-
     descricao = st.text_area("Descrição")
 
     status = st.selectbox(
-
         "Status inicial",
         ["todo","progress","done"]
-
     )
 
     if st.button("Criar tarefa"):
 
-        st.session_state.tasks.append({
+        if titulo:
 
-            "titulo":titulo,
-            "descricao":descricao,
-            "status":status
+            st.session_state.tasks.append({
 
-        })
+                "titulo":titulo,
+                "descricao":descricao,
+                "status":status
 
-        st.success("Tarefa criada!")
+            })
 
-        st.rerun()
+            st.success("Tarefa criada!")
 
-# -------------------------
+            st.rerun()
+
+        else:
+
+            st.warning("Digite um título")
+
+
+# -----------------------
 # KANBAN
-# -------------------------
+# -----------------------
 
 if menu == "Kanban":
 
@@ -189,12 +167,12 @@ if menu == "Kanban":
 
         for i,task in enumerate(todo_tasks):
 
-            st.markdown(f"**{task['titulo']}**")
+            st.write(f"**{task['titulo']}**")
             st.write(task["descricao"])
 
             if st.button("➡ mover", key=f"todo{i}"):
 
-                task["status"]="progress"
+                task["status"] = "progress"
                 st.rerun()
 
             if st.button("🗑 excluir", key=f"deltodo{i}"):
@@ -206,16 +184,16 @@ if menu == "Kanban":
 
     with col2:
 
-        st.subheader("⚙ Em progresso")
+        st.subheader("⚙ Em Progresso")
 
         for i,task in enumerate(progress_tasks):
 
-            st.markdown(f"**{task['titulo']}**")
+            st.write(f"**{task['titulo']}**")
             st.write(task["descricao"])
 
             if st.button("➡ concluir", key=f"prog{i}"):
 
-                task["status"]="done"
+                task["status"] = "done"
                 st.rerun()
 
             if st.button("🗑 excluir", key=f"delprog{i}"):
@@ -231,7 +209,7 @@ if menu == "Kanban":
 
         for i,task in enumerate(done_tasks):
 
-            st.markdown(f"**{task['titulo']}**")
+            st.write(f"**{task['titulo']}**")
             st.write(task["descricao"])
 
             if st.button("🗑 excluir", key=f"deldone{i}"):
