@@ -45,34 +45,26 @@ st.markdown("""
 
 def login():
 
-    st.markdown("<div class='login-wrap'><div class='login-box'>", unsafe_allow_html=True)
+    col1, col2, col3 = st.columns([1,2,1])
 
-    st.markdown("## 🚀 DevBoard AI")
-    st.write("Kanban para equipes de desenvolvimento")
+    with col2:
 
-    user = st.text_input("Usuário")
-    password = st.text_input("Senha", type="password")
+        st.markdown("## 🚀 DevBoard AI")
+        st.write("Kanban para equipes de desenvolvimento")
 
-    if st.button("Entrar", use_container_width=True):
+        user = st.text_input("Usuário")
+        password = st.text_input("Senha", type="password")
 
-        if user == "admin" and password == "123":
+        if st.button("Entrar", use_container_width=True):
 
-            st.session_state.logado = True
-            st.rerun()
+            if user == "admin" and password == "123":
 
-        else:
+                st.session_state.logado = True
+                st.rerun()
 
-            st.error("Credenciais inválidas")
+            else:
 
-    st.markdown("</div></div>", unsafe_allow_html=True)
-
-
-if "logado" not in st.session_state:
-    st.session_state.logado = False
-
-if not st.session_state.logado:
-    login()
-    st.stop()
+                st.error("Credenciais inválidas")
 
 # -------------------------
 # BANCO DE TAREFAS
