@@ -3,7 +3,9 @@ import pandas as pd
 
 st.set_page_config(page_title="DevTask Pro", page_icon="🚀", layout="wide")
 
+# -------------------------
 # LOGIN
+# -------------------------
 
 def login():
 
@@ -21,37 +23,77 @@ def login():
             st.rerun()
 
         else:
-            st.error("Credenciais inválidas")
+            st.error("Usuário ou senha incorretos")
 
 
 if "logado" not in st.session_state:
     st.session_state["logado"] = False
 
-
 if not st.session_state["logado"]:
     login()
     st.stop()
 
-
-# BANCO DE TAREFAS
+# -------------------------
+# BANCO DE TAREFAS (FAKE)
+# -------------------------
 
 if "tasks" not in st.session_state:
-    st.session_state.tasks = []
+    st.session_state.tasks = [
+        {
+            "titulo": "Implementar sistema de autenticação",
+            "descricao": "Criar login seguro com validação de usuário e senha.",
+            "done": True
+        },
+        {
+            "titulo": "Desenvolver dashboard de métricas",
+            "descricao": "Adicionar gráficos de produtividade.",
+            "done": True
+        },
+        {
+            "titulo": "Criar API REST",
+            "descricao": "Integração com serviços externos.",
+            "done": False
+        },
+        {
+            "titulo": "Implementar exportação de dados",
+            "descricao": "Exportar tarefas para CSV.",
+            "done": False
+        },
+        {
+            "titulo": "Sistema de notificações",
+            "descricao": "Alertar usuários sobre prazos.",
+            "done": False
+        },
+        {
+            "titulo": "Melhorar UI",
+            "descricao": "Aplicar melhorias visuais.",
+            "done": True
+        },
+        {
+            "titulo": "Otimização de performance",
+            "descricao": "Reduzir tempo de carregamento.",
+            "done": False
+        }
+    ]
 
+# -------------------------
+# SIDEBAR
+# -------------------------
 
-st.sidebar.title("DevTask Pro")
+st.sidebar.title("🚀 DevTask Pro")
 
 menu = st.sidebar.radio(
     "Menu",
-    ["Dashboard","Criar tarefa","Lista de tarefas"]
+    ["Dashboard","Criar tarefa","Lista de tarefas","Exportar"]
 )
 
 if st.sidebar.button("Sair"):
     st.session_state["logado"] = False
     st.rerun()
 
-
+# -------------------------
 # DASHBOARD
+# -------------------------
 
 if menu == "Dashboard":
 
@@ -66,60 +108,94 @@ if menu == "Dashboard":
     col2.metric("Concluídas", done)
 
     if total > 0:
-        progress = done / total
-        st.progress(progress)
 
+        progresso = done / total
+
+        st.progress(progresso)
+
+    st.subheader("Progresso do projeto")
+
+    data = {
+        "Status":["Concluídas","Pendentes"],
+        "Quantidade":[done,total-done]
+    }
+
+    df = pd.DataFrame(data)
+
+    st.bar_chart(df.set_index("Status"))
+
+# -------------------------
 # CRIAR TAREFA
+# -------------------------
 
 if menu == "Criar tarefa":
 
     st.title("➕ Nova tarefa")
 
-    titulo = st.text_input("Título")
+    titulo = st.text_input("Título da tarefa")
+
     descricao = st.text_area("Descrição")
 
-    if st.button("Salvar"):
+    if st.button("Salvar tarefa"):
 
-        st.session_state.tasks.append({
-            "titulo":titulo,
-            "descricao":descricao,
-            "done":False
-        })
+        if titulo:
 
-        st.success("Tarefa criada!")
+            st.session_state.tasks.append({
+                "titulo":titulo,
+                "descricao":descricao,
+                "done":False
+            })
 
+            st.success("Tarefa criada com sucesso!")
+
+        else:
+            st.warning("Digite um título")
+
+# -------------------------
 # LISTA
+# -------------------------
 
 if menu == "Lista de tarefas":
 
-    st.title("📋 Tarefas")
+    st.title("📋 Lista de tarefas")
 
     for i,task in enumerate(st.session_state.tasks):
 
-        col1,col2 = st.columns([4,1])
+        col1,col2 = st.columns([5,1])
 
         with col1:
-            st.write(f"**{task['titulo']}**")
+
+            if task["done"]:
+                st.write(f"✅ **{task['titulo']}**")
+            else:
+                st.write(f"⬜ **{task['titulo']}**")
+
             st.write(task["descricao"])
 
         with col2:
 
             if not task["done"]:
 
-                if st.button("✔", key=i):
+                if st.button("Concluir", key=i):
 
                     st.session_state.tasks[i]["done"] = True
                     st.rerun()
 
-    if st.session_state.tasks:
+# -------------------------
+# EXPORTAR
+# -------------------------
 
-        df = pd.DataFrame(st.session_state.tasks)
+if menu == "Exportar":
 
-        csv = df.to_csv(index=False)
+    st.title("📥 Exportar tarefas")
 
-        st.download_button(
-            "Exportar tarefas",
-            csv,
-            "tarefas.csv",
-            "text/csv"
-        )
+    df = pd.DataFrame(st.session_state.tasks)
+
+    csv = df.to_csv(index=False)
+
+    st.download_button(
+        label="Baixar CSV",
+        data=csv,
+        file_name="tarefas.csv",
+        mime="text/csv"
+    )
