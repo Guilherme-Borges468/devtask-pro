@@ -1,3 +1,4 @@
+
 import streamlit as st
 import pandas as pd
 
@@ -6,6 +7,27 @@ st.set_page_config(
     page_icon="🚀",
     layout="wide"
 )
+
+# -----------------------
+# CSS / VISUAL
+# -----------------------
+
+st.markdown("""
+<style>
+.stApp {
+    background-color: #0e1117;
+    color: white;
+}
+
+button {
+    border-radius: 8px !important;
+}
+
+.block-container {
+    padding-top: 2rem;
+}
+</style>
+""", unsafe_allow_html=True)
 
 # -----------------------
 # LOGIN
@@ -62,6 +84,21 @@ if "tasks" not in st.session_state:
 
 
 # -----------------------
+# HEADER / PROGRESSO
+# -----------------------
+
+st.markdown("## 🚀 DevBoard AI")
+
+total_tasks = len(st.session_state.tasks)
+done_tasks = len([t for t in st.session_state.tasks if t["status"]=="done"])
+
+progress = int((done_tasks/total_tasks)*100) if total_tasks > 0 else 0
+
+st.progress(progress)
+st.caption(f"Progresso do projeto: {progress}% concluído")
+
+
+# -----------------------
 # SIDEBAR
 # -----------------------
 
@@ -90,24 +127,32 @@ if menu == "Dashboard":
 
     total = len(df)
     todo = len(df[df["status"]=="todo"])
-    progress = len(df[df["status"]=="progress"])
+    progress_count = len(df[df["status"]=="progress"])
     done = len(df[df["status"]=="done"])
 
     col1,col2,col3,col4 = st.columns(4)
 
     col1.metric("Total", total)
     col2.metric("A Fazer", todo)
-    col3.metric("Em Progresso", progress)
+    col3.metric("Em Progresso", progress_count)
     col4.metric("Concluído", done)
+
+    st.subheader("Distribuição de tarefas")
 
     graf = pd.DataFrame({
 
         "Status":["A Fazer","Em Progresso","Concluído"],
-        "Quantidade":[todo,progress,done]
+        "Quantidade":[todo,progress_count,done]
 
     })
 
     st.bar_chart(graf.set_index("Status"))
+
+    st.subheader("📌 Últimas tarefas")
+
+    for t in st.session_state.tasks[-5:]:
+
+        st.write(f"**{t['titulo']}** - {t['status']}")
 
 
 # -----------------------
@@ -145,6 +190,25 @@ if menu == "Nova tarefa":
         else:
 
             st.warning("Digite um título")
+
+    st.divider()
+
+    if st.button("⚡ Gerar tarefas de exemplo"):
+
+        exemplos = [
+
+            {"titulo":"Criar API de usuários","descricao":"CRUD completo","status":"todo"},
+            {"titulo":"Sistema de autenticação","descricao":"JWT login","status":"progress"},
+            {"titulo":"Dashboard analytics","descricao":"Gráficos de dados","status":"todo"},
+            {"titulo":"Deploy AWS","descricao":"Infraestrutura cloud","status":"done"}
+
+        ]
+
+        st.session_state.tasks.extend(exemplos)
+
+        st.success("Tarefas de exemplo criadas!")
+
+        st.rerun()
 
 
 # -----------------------
