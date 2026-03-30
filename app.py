@@ -1,30 +1,39 @@
 import streamlit as st
 import pandas as pd
 
-st.set_page_config(
-    page_title="DevTask Pro",
-    page_icon="🚀",
-    layout="wide"
-)
+st.set_page_config(page_title="DevBoard AI", page_icon="🚀", layout="wide")
 
 # -------------------------
-# ESTILO
+# CSS GLOBAL
 # -------------------------
 
 st.markdown("""
 <style>
 
-.block-container{
-padding-top: 2rem;
+[data-testid="stSidebar"] {
+    background-color: #111;
+}
+
+.login-wrap{
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    height:85vh;
 }
 
 .login-box{
-max-width:400px;
-margin:auto;
-padding:40px;
-border-radius:10px;
-background-color:#1e1e1e;
-box-shadow:0 0 20px rgba(0,0,0,0.3);
+    width:380px;
+    padding:40px;
+    border-radius:12px;
+    background:#1e1e1e;
+    box-shadow:0px 0px 30px rgba(0,0,0,0.4);
+}
+
+.task-card{
+    padding:15px;
+    border-radius:10px;
+    background:#1e1e1e;
+    margin-bottom:10px;
 }
 
 </style>
@@ -36,31 +45,10 @@ box-shadow:0 0 20px rgba(0,0,0,0.3);
 
 def login():
 
-    st.markdown("""
-    <style>
+    st.markdown("<div class='login-wrap'><div class='login-box'>", unsafe_allow_html=True)
 
-    .login-container{
-        display:flex;
-        justify-content:center;
-        align-items:center;
-        height:80vh;
-    }
-
-    .login-box{
-        width:350px;
-        padding:40px;
-        border-radius:10px;
-        background:#1e1e1e;
-        box-shadow:0px 0px 20px rgba(0,0,0,0.4);
-    }
-
-    </style>
-    """, unsafe_allow_html=True)
-
-    st.markdown("<div class='login-container'><div class='login-box'>", unsafe_allow_html=True)
-
-    st.markdown("## 🚀 DevTask Pro")
-    st.write("Sistema de gerenciamento de tarefas")
+    st.markdown("## 🚀 DevBoard AI")
+    st.write("Kanban para equipes de desenvolvimento")
 
     user = st.text_input("Usuário")
     password = st.text_input("Senha", type="password")
@@ -69,32 +57,40 @@ def login():
 
         if user == "admin" and password == "123":
 
-            st.session_state["logado"] = True
+            st.session_state.logado = True
             st.rerun()
 
         else:
 
-            st.error("Usuário ou senha inválidos")
+            st.error("Credenciais inválidas")
 
     st.markdown("</div></div>", unsafe_allow_html=True)
 
+
+if "logado" not in st.session_state:
+    st.session_state.logado = False
+
+if not st.session_state.logado:
+    login()
+    st.stop()
+
 # -------------------------
-# BANCO FAKE
+# BANCO DE TAREFAS
 # -------------------------
 
 if "tasks" not in st.session_state:
 
     st.session_state.tasks = [
 
-        {"titulo":"Criar sistema de login","descricao":"Implementar autenticação","done":True},
+        {"titulo":"Criar sistema de login","descricao":"Implementar autenticação","status":"todo"},
 
-        {"titulo":"Criar dashboard","descricao":"Adicionar métricas e gráficos","done":True},
+        {"titulo":"Criar dashboard","descricao":"Adicionar métricas","status":"progress"},
 
-        {"titulo":"Criar API","descricao":"Integração com backend","done":False},
+        {"titulo":"Criar API REST","descricao":"Integração backend","status":"todo"},
 
-        {"titulo":"Sistema de notificações","descricao":"Alertar usuários","done":False},
+        {"titulo":"Deploy cloud","descricao":"Publicar aplicação","status":"done"},
 
-        {"titulo":"Melhorar UI","descricao":"Aplicar design moderno","done":False},
+        {"titulo":"Melhorar UI","descricao":"Aplicar design moderno","status":"progress"}
 
     ]
 
@@ -102,16 +98,18 @@ if "tasks" not in st.session_state:
 # SIDEBAR
 # -------------------------
 
-st.sidebar.title("🚀 DevTask Pro")
+st.sidebar.title("🚀 DevBoard AI")
 
 menu = st.sidebar.radio(
+
     "Menu",
-    ["Dashboard","Nova tarefa","Tarefas"]
+    ["Dashboard","Kanban","Nova tarefa"]
+
 )
 
 if st.sidebar.button("Sair"):
 
-    st.session_state["logado"] = False
+    st.session_state.logado = False
     st.rerun()
 
 # -------------------------
@@ -122,28 +120,29 @@ if menu == "Dashboard":
 
     st.title("📊 Dashboard")
 
-    total = len(st.session_state.tasks)
-    done = sum(t["done"] for t in st.session_state.tasks)
+    df = pd.DataFrame(st.session_state.tasks)
 
-    col1,col2,col3 = st.columns(3)
+    total = len(df)
 
-    col1.metric("Total tarefas", total)
-    col2.metric("Concluídas", done)
-    col3.metric("Pendentes", total-done)
+    todo = len(df[df["status"]=="todo"])
+    progress = len(df[df["status"]=="progress"])
+    done = len(df[df["status"]=="done"])
 
-    if total > 0:
+    col1,col2,col3,col4 = st.columns(4)
 
-        progresso = done/total
-        st.progress(progresso)
+    col1.metric("Total", total)
+    col2.metric("A fazer", todo)
+    col3.metric("Em progresso", progress)
+    col4.metric("Concluídas", done)
 
-    df = pd.DataFrame({
-        "Status":["Concluídas","Pendentes"],
-        "Quantidade":[done,total-done]
+    graf = pd.DataFrame({
+
+        "Status":["A Fazer","Em Progresso","Concluído"],
+        "Quantidade":[todo,progress,done]
+
     })
 
-    st.subheader("Distribuição de tarefas")
-
-    st.bar_chart(df.set_index("Status"))
+    st.bar_chart(graf.set_index("Status"))
 
 # -------------------------
 # NOVA TAREFA
@@ -151,60 +150,101 @@ if menu == "Dashboard":
 
 if menu == "Nova tarefa":
 
-    st.title("➕ Criar nova tarefa")
+    st.title("➕ Criar tarefa")
 
     titulo = st.text_input("Título")
+
     descricao = st.text_area("Descrição")
 
-    if st.button("Salvar"):
+    status = st.selectbox(
 
-        if titulo:
+        "Status inicial",
+        ["todo","progress","done"]
 
-            st.session_state.tasks.append({
+    )
 
-                "titulo":titulo,
-                "descricao":descricao,
-                "done":False
+    if st.button("Criar tarefa"):
 
-            })
+        st.session_state.tasks.append({
 
-            st.success("Tarefa criada!")
+            "titulo":titulo,
+            "descricao":descricao,
+            "status":status
 
-            st.rerun()
+        })
+
+        st.success("Tarefa criada!")
+
+        st.rerun()
 
 # -------------------------
-# LISTA
+# KANBAN
 # -------------------------
 
-if menu == "Tarefas":
+if menu == "Kanban":
 
-    st.title("📋 Lista de tarefas")
+    st.title("🗂 Quadro Kanban")
 
-    for i,task in enumerate(st.session_state.tasks):
+    col1,col2,col3 = st.columns(3)
 
-        col1,col2,col3 = st.columns([4,1,1])
+    todo_tasks = [t for t in st.session_state.tasks if t["status"]=="todo"]
+    progress_tasks = [t for t in st.session_state.tasks if t["status"]=="progress"]
+    done_tasks = [t for t in st.session_state.tasks if t["status"]=="done"]
 
-        with col1:
+    with col1:
 
-            if task["done"]:
-                st.write(f"✅ **{task['titulo']}**")
-            else:
-                st.write(f"⬜ **{task['titulo']}**")
+        st.subheader("📌 A Fazer")
 
+        for i,task in enumerate(todo_tasks):
+
+            st.markdown(f"**{task['titulo']}**")
             st.write(task["descricao"])
 
-        with col2:
+            if st.button("➡ mover", key=f"todo{i}"):
 
-            if not task["done"]:
-
-                if st.button("Concluir", key=f"done{i}"):
-
-                    st.session_state.tasks[i]["done"] = True
-                    st.rerun()
-
-        with col3:
-
-            if st.button("Excluir", key=f"del{i}"):
-
-                st.session_state.tasks.pop(i)
+                task["status"]="progress"
                 st.rerun()
+
+            if st.button("🗑 excluir", key=f"deltodo{i}"):
+
+                st.session_state.tasks.remove(task)
+                st.rerun()
+
+            st.divider()
+
+    with col2:
+
+        st.subheader("⚙ Em progresso")
+
+        for i,task in enumerate(progress_tasks):
+
+            st.markdown(f"**{task['titulo']}**")
+            st.write(task["descricao"])
+
+            if st.button("➡ concluir", key=f"prog{i}"):
+
+                task["status"]="done"
+                st.rerun()
+
+            if st.button("🗑 excluir", key=f"delprog{i}"):
+
+                st.session_state.tasks.remove(task)
+                st.rerun()
+
+            st.divider()
+
+    with col3:
+
+        st.subheader("✅ Concluído")
+
+        for i,task in enumerate(done_tasks):
+
+            st.markdown(f"**{task['titulo']}**")
+            st.write(task["descricao"])
+
+            if st.button("🗑 excluir", key=f"deldone{i}"):
+
+                st.session_state.tasks.remove(task)
+                st.rerun()
+
+            st.divider()
