@@ -36,10 +36,31 @@ box-shadow:0 0 20px rgba(0,0,0,0.3);
 
 def login():
 
-    st.markdown("<div class='login-box'>", unsafe_allow_html=True)
+    st.markdown("""
+    <style>
 
-    st.title("🚀 DevTask Pro")
-    st.write("Gerenciador de tarefas para desenvolvedores")
+    .login-container{
+        display:flex;
+        justify-content:center;
+        align-items:center;
+        height:80vh;
+    }
+
+    .login-box{
+        width:350px;
+        padding:40px;
+        border-radius:10px;
+        background:#1e1e1e;
+        box-shadow:0px 0px 20px rgba(0,0,0,0.4);
+    }
+
+    </style>
+    """, unsafe_allow_html=True)
+
+    st.markdown("<div class='login-container'><div class='login-box'>", unsafe_allow_html=True)
+
+    st.markdown("## 🚀 DevTask Pro")
+    st.write("Sistema de gerenciamento de tarefas")
 
     user = st.text_input("Usuário")
     password = st.text_input("Senha", type="password")
@@ -53,17 +74,9 @@ def login():
 
         else:
 
-            st.error("Credenciais inválidas")
+            st.error("Usuário ou senha inválidos")
 
-    st.markdown("</div>", unsafe_allow_html=True)
-
-
-if "logado" not in st.session_state:
-    st.session_state["logado"] = False
-
-if not st.session_state["logado"]:
-    login()
-    st.stop()
+    st.markdown("</div></div>", unsafe_allow_html=True)
 
 # -------------------------
 # BANCO FAKE
